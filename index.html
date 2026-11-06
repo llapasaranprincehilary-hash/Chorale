@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chorale Manager</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#5b2a6e">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f3f7;--card:#fff;--ink:#1b1d2b;--mute:#666b80;--line:#dcdfe8;--plum:#5b2a6e;--on:#fff;--tint:#efe7f3;--ok:#1d7a52;--warn:#a65f00;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14151f;--card:#1e2030;--ink:#eceef6;--mute:#9a9fb5;--line:#34374d;--plum:#c79ad9;--on:#1b1d2b;--tint:#2b2140;--ok:#5fd09a;--warn:#f0b24a;--bad:#ff8a80}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14151f;--card:#1e2030;--ink:#eceef6;--mute:#9a9fb5;--line:#34374d;--plum:#c79ad9;--on:#1b1d2b;--tint:#2b2140;--ok:#5fd09a;--warn:#f0b24a;--bad:#ff8a80}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif}
+header{padding:20px 16px 8px;max-width:1040px;margin:auto}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+h1{font-size:1.7rem}h2{font-size:1.3rem;margin-bottom:10px}h3{font-size:1.05rem}
+nav{display:flex;gap:4px;overflow-x:auto;max-width:1040px;margin:auto;padding:0 12px;border-bottom:1px solid var(--line)}
+nav a{padding:10px 12px;color:var(--mute);text-decoration:none;white-space:nowrap;border-bottom:3px solid transparent}
+nav a.on{color:var(--plum);border-color:var(--plum);font-weight:600}
+main{max-width:1040px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font:600 1.5rem Fraunces,Georgia,serif}.stat span{color:var(--mute);font-size:.88rem}
+.two{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}th{color:var(--mute);font-weight:600}
+.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn.pri{background:var(--plum);color:var(--on);border-color:var(--plum)}.btn.sm{padding:3px 9px;font-size:.85rem;margin-right:4px}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--plum);outline-offset:2px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.82rem;border:1px solid currentColor}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.mute{color:var(--mute)}
+.voices{display:flex;gap:18px;align-items:flex-end;height:130px}.voices div{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.voices i{display:block;background:var(--plum);border-radius:6px 6px 0 0;min-height:4px}.voices small{color:var(--mute)}
+.seg button{min-width:38px;padding:4px 8px;font-weight:600}.seg button.on{background:var(--plum);color:var(--on);border-color:var(--plum)}
+ul.al{list-style:none;margin:0;padding:0}ul.al li{padding:6px 0;border-bottom:1px solid var(--line)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(440px,92vw)}dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog label{display:block;margin:8px 0;font-size:.9rem;color:var(--mute)}
+dialog input,dialog select,dialog textarea,.bar select{display:block;width:100%;font:inherit;padding:8px;margin-top:3px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.bar select{width:auto}.row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;display:none}
+.out header,.out nav,.out main{display:none!important}#gate{display:none;max-width:420px;margin:8vh auto;padding:16px}.out #gate{display:block}
+#gate label{display:block;margin:8px 0;font-size:.9rem;color:var(--mute)}#gate input{display:block;width:100%;font:inherit;padding:8px;margin-top:3px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}#sync{font-size:.8rem}
+</style></head>
+<body>
+<header style="display:flex;gap:12px;align-items:center"><img id="logo" alt="" style="display:none;width:48px;height:48px;object-fit:contain;border-radius:8px"><div><h1 id="ttl"></h1><div class="mute">Auditions, attendance, costumes, funds and schedule <span id="sync"></span></div></div></header>
+<nav id="nav"></nav><main id="main"></main><dialog id="dlg"></dialog><div id="gate"></div><div id="toast" role="status"></div>
+<script>
+/* Storage layer: everything goes through load()/save(). To move to Firestore (like Finuity), replace these two
+   functions with reads/writes of one document per choir, e.g. choirs/{uid}, and keep the same shape. */
+const K='chorale.v1',$=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>iso(new Date()),addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return iso(d)};
+const fmt=d=>d?new Date(d+'T00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'';
+const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{maximumFractionDigits:2});
+const uid=()=>Math.random().toString(36).slice(2,9),sum=(a,k)=>a.reduce((s,x)=>s+(+x[k]||0),0);
+const byDate=(a,b)=>(a.date+(a.time||''))<(b.date+(b.time||''))?-1:1;
+const VOICES=['Soprano','Alto','Tenor','Bass'],ITEMS=['Robe','Sash','Dress','Barong','Shoes','Folder'];
+const blank=()=>({name:'My Chorale',dues:500,sample:false,logo:'',members:[],auditions:[],events:[],att:{},costumes:[],payments:[],expenses:[],donations:[],donate:{bank:'',acctName:'',acctNo:'',gcash:'',note:'',qr:''}});
+const lload=()=>{try{const r=localStorage.getItem(K+':'+UID);return r?Object.assign(blank(),JSON.parse(r)):null}catch(e){return null}};
+function save(){if(!UID)return;try{localStorage.setItem(K+':'+UID,JSON.stringify(S))}catch(e){}clearTimeout(pushT);pushT=setTimeout(push,800)}
+const setSync=t=>{$('#sync').textContent=t};
+async function push(strict){if(!UID)return;const st=JSON.stringify(S);
+ if(st.length>900000){setSync('Storage almost full');toast('Records are near the storage limit. Export a backup and remove old data.');return}
+ try{await FS.collection('choirs').doc(UID).set({ownerUid:UID,name:S.name,state:st,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});setSync('· Saved')}catch(e){setSync('· Not saved. Check your connection.');if(strict)throw e}}
+function seed(){const T=blank();T.sample=true;
+ T.members=[['Maria Santos','Soprano'],['Ana Dela Cruz','Alto'],['Jose Reyes','Tenor'],['Ramon Garcia','Bass'],['Liza Mendoza','Soprano'],['Joy Villanueva','Alto'],['Carlo Bautista','Tenor'],['Paolo Aquino','Bass']]
+  .map((x,i)=>({id:'m'+i,name:x[0],voice:x[1],contact:'0917-555-010'+i,status:'Active',joined:addDays(-120)}));
+ T.events=[['Weekly rehearsal',-14,'Rehearsal'],['Weekly rehearsal',-7,'Rehearsal'],['Weekly rehearsal',2,'Rehearsal'],['Weekly rehearsal',9,'Rehearsal'],['Christmas concert',21,'Concert']]
+  .map((x,i)=>({id:'e'+i,title:x[0],date:addDays(x[1]),time:x[2]==='Concert'?'19:00':'18:00',type:x[2],venue:x[2]==='Concert'?'Main Church':'Music Hall',notes:''}));
+ const p0='PPLPAPEP',p1='PAPPAPPL';
+ T.att={e0:{},e1:{}};T.members.forEach((m,i)=>{T.att.e0[m.id]=p0[i];T.att.e1[m.id]=p1[i]});
+ T.auditions=[{id:'a0',name:'Grace Lim',voice:'Soprano',contact:'0917-555-0200',date:addDays(-3),pitch:5,tone:4,sight:4,range:4,decision:'Accepted',notes:'Strong high register',added:false},
+  {id:'a1',name:'Mark Tan',voice:'Tenor',contact:'0917-555-0201',date:addDays(-3),pitch:3,tone:3,sight:3,range:3,decision:'Waitlisted',notes:'',added:false},
+  {id:'a2',name:'Ella Cruz',voice:'Alto',contact:'0917-555-0202',date:addDays(3),pitch:0,tone:0,sight:0,range:0,decision:'Pending',notes:'',added:false}];
+ T.costumes=[0,1,2,3,4,5].map(i=>({id:'c'+i,memberId:'m'+i,item:'Robe',size:['M','S','L','XL','S','M'][i],deposit:200,date:addDays(-100),status:i===3?'Lost':'Issued'}));
+ T.costumes.push({id:'c9',memberId:'m0',item:'Sash',size:'-',deposit:0,date:addDays(-100),status:'Returned'});
+ T.payments=[0,1,2,3,4].map(i=>({id:'p'+i,memberId:'m'+i,amount:500,date:addDays(-20),note:'Semester dues'}));
+ T.payments.push({id:'p9',memberId:'m5',amount:250,date:addDays(-10),note:'Half payment'});
+ T.expenses=[{id:'x0',desc:'Robe laundering',amount:600,date:addDays(-15),category:'Costumes'},{id:'x1',desc:'Hall rental',amount:1500,date:addDays(-8),category:'Venue'}];
+ T.donations=[{id:'d0',donor:'Anonymous',amount:1000,date:addDays(-5),method:'GCash',note:'Concert fund'}];
+ T.donate={bank:'Sample Bank',acctName:'Your Chorale',acctNo:'0000 0000 0000',gcash:'0917 000 0000',note:'Thank you for supporting our music.',qr:''};
+ return T}
+let S=blank(),AE=null,UNDO=null,UID=null,AUTH,FS,pushT=null,pend='';
+/* Member ID: issued once, never reused or edited. Every record shows it so one person is always the same person. */
+const nextId=()=>{S.seq=(S.seq||0)+1;return 'CH-'+new Date().getFullYear()+'-'+String(S.seq).padStart(3,'0')};
+const mem=id=>S.members.find(m=>m.id===id)||{name:'(removed)'};
+const act=()=>S.members.filter(m=>m.status==='Active');
+function rate(m){let p=0,t=0;for(const e of S.events){const r=(S.att[e.id]||{})[m.id];if(!r||r==='E')continue;t++;if(r==='P'||r==='L')p++}return t?Math.round(p/t*100):null}
+const paid=m=>sum(S.payments.filter(p=>p.memberId===m.id),'amount'),owed=m=>Math.max(0,S.dues-paid(m));
+const out=m=>S.costumes.filter(c=>c.memberId===m.id&&c.status==='Issued').length;
+const tot=a=>(+a.pitch||0)+(+a.tone||0)+(+a.sight||0)+(+a.range||0);
+function conflicts(){const s=new Set;S.events.forEach(a=>S.events.forEach(b=>{if(a.id!==b.id&&a.date===b.date&&a.time===b.time)s.add(a.id)}));return s}
+function alerts(){const A=[];
+ act().forEach(m=>{const r=rate(m);if(r!=null&&r<75)A.push(['warn',esc(m.name)+' has attended '+r+'% of sessions'])});
+ const d=act().filter(m=>owed(m)>0);if(d.length)A.push(['warn',d.length+' members still owe dues ('+peso(d.reduce((a,m)=>a+owed(m),0))+')']);
+ const lost=S.costumes.filter(c=>c.status==='Lost').length;if(lost)A.push(['bad',lost+' costume item(s) marked lost']);
+ const gone=S.costumes.filter(c=>c.status==='Issued'&&mem(c.memberId).status&&mem(c.memberId).status!=='Active').length;if(gone)A.push(['bad',gone+' costume item(s) still with inactive members']);
+ const pend=S.auditions.filter(a=>a.decision==='Pending').length;if(pend)A.push(['',pend+' audition(s) waiting for a score']);
+ const cf=conflicts().size;if(cf)A.push(['bad',cf+' events share the same date and time']);
+ return A}
+/* ---------- UI helpers ---------- */
+const pill=(t,c)=>`<span class="pill ${c||''}">${esc(t)}</span>`;
+const b=(a,id,l,v)=>`<button class="btn sm" data-a="${a}" data-id="${id||''}" data-v="${v||''}">${l}</button>`;
+const add=(a,l)=>`<button class="btn pri" data-a="${a}">${l}</button>`;
+const T=(h,rows)=>rows.length?`<div class="scroll"><table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'<p class="mute">Nothing here yet. Use the button above to add the first entry.</p>';
+function toast(t,u){const e=$('#toast');e.innerHTML=esc(t)+(u?' <button class="btn sm" id="un">Undo</button>':'');e.style.display='block';
+ if(u)$('#un').onclick=()=>{S=Object.assign(blank(),JSON.parse(UNDO));e.style.display='none';render()};clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',u?7000:2600)}
+function ask(title,fields,cb,msg){const d=$('#dlg');
+ const inp=f=>f.type==='select'?`<select name="${f.k}">${f.opts.map(o=>{const v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?o[1]:o;return `<option value="${esc(v)}"${String(f.v)===String(v)?' selected':''}>${esc(l)}</option>`}).join('')}</select>`
+  :f.type==='area'?`<textarea name="${f.k}" rows="2">${esc(f.v||'')}</textarea>`
+  :`<input name="${f.k}" type="${f.type||'text'}" value="${esc(f.v??'')}"${f.req?' required':''}${f.type==='number'?' step="any" min="'+(f.min??0)+'"'+(f.max!=null?' max="'+f.max+'"':''):''}>`;
+ d.innerHTML=`<form id="f"><h3>${esc(title)}</h3>${msg?`<p class="mute">${esc(msg)}</p>`:''}${fields.map(f=>`<label>${esc(f.label)}${inp(f)}</label>`).join('')}<div class="row"><button type="button" class="btn" id="x">Cancel</button><button class="btn pri">${fields.length?'Save':'Confirm'}</button></div></form>`;
+ d.showModal();$('#x').onclick=()=>d.close();
+ $('#f').onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target),o={};fields.forEach(f=>{let v=fd.get(f.k);if(f.type==='number')v=Number(v||0);o[f.k]=v});d.close();cb(o)}}
+const sure=(msg,fn)=>ask('Please confirm',[],()=>{UNDO=JSON.stringify(S);fn();toast('Done.',1)},msg);
+const nm=id=>{const m=mem(id);return esc(m.name)+(m.mid?' <small class="mute">'+m.mid+'</small>':'')};
+/* ---------- views ---------- */
+const V={};
+V.dashboard=()=>{const a=act(),rs=a.map(rate).filter(r=>r!=null),avg=rs.length?Math.round(rs.reduce((x,y)=>x+y,0)/rs.length)+'%':'-';
+ const cnt=VOICES.map(v=>a.filter(m=>m.voice===v).length),mx=Math.max(1,...cnt),cf=conflicts();
+ const up=S.events.filter(e=>e.date>=today()).sort(byDate).slice(0,5),al=alerts();
+ return `${S.sample?'<div class="card">You are looking at sample data. Open the Data tab and choose “Start fresh” when you are ready to enter your own choir.</div>':''}
+ <div class="grid"><div class="stat"><b>${a.length}</b><span>Active singers</span></div><div class="stat"><b>${avg}</b><span>Average attendance</span></div>
+ <div class="stat"><b>${S.costumes.filter(c=>c.status==='Issued').length}</b><span>Costume items out</span></div>
+ <div class="stat"><b>${peso(sum(S.payments,'amount')+sum(S.donations,'amount')-sum(S.expenses,'amount'))}</b><span>Cash on hand</span></div>
+ <div class="stat"><b>${peso(a.reduce((x,m)=>x+owed(m),0))}</b><span>Dues outstanding</span></div></div>
+ <div class="two"><div class="card"><h2>Voice parts</h2><div class="voices">${cnt.map((n,i)=>`<div><b>${n}</b><i style="height:${n/mx*90}px"></i><small>${VOICES[i]}</small></div>`).join('')}</div></div>
+ <div class="card"><h2>Needs attention</h2>${al.length?`<ul class="al">${al.map(x=>`<li>${pill(x[0]==='bad'?'Urgent':x[0]==='warn'?'Check':'Note',x[0])} ${x[1]}</li>`).join('')}</ul>`:'<p class="mute">All clear. Nothing needs attention.</p>'}</div></div>
+ <div class="card"><h2>Coming up</h2>${T(['Date','Event','Venue'],up.map(e=>[fmt(e.date)+' '+esc(e.time),esc(e.title)+(cf.has(e.id)?' '+pill('Conflict','bad'):''),esc(e.venue)]))}</div>`};
+V.members=()=>`<div class="bar"><h2>Members</h2>${add('addMember','Add member')}</div><div class="card">${T(['Name','Voice','Status','Attendance','Dues owed','Costumes out',''],
+ [...S.members].sort((x,y)=>VOICES.indexOf(x.voice)-VOICES.indexOf(y.voice)).map(m=>{const r=rate(m);return [`${esc(m.name)}<br><small class="mute">${m.mid} · ${esc(m.contact)}</small>`,esc(m.voice),pill(m.status,m.status==='Active'?'ok':''),r==null?'-':pill(r+'%',r<75?'warn':'ok'),owed(m)?peso(owed(m)):'-',out(m)||'-',b('editMember',m.id,'Edit')+b('delMember',m.id,'Remove')]}))}</div>`;
+V.auditions=()=>`<div class="bar"><h2>Auditions</h2>${add('addAud','Add audition')}</div>
+ <p class="mute">Score each skill from 0 to 5. A total of 16 or more suggests Accepted, 12 to 15 Waitlisted, and lower Declined. You can always change the decision.</p>
+ <div class="card">${T(['Applicant','Voice','Date','Pitch / Tone / Sight / Range','Total','Decision',''],[...S.auditions].sort(byDate).map(a=>[`${esc(a.name)}<br><small class="mute">${esc(a.notes)}</small>`,esc(a.voice),fmt(a.date),[a.pitch,a.tone,a.sight,a.range].join(' / '),tot(a)+'/20',pill(a.decision,{Accepted:'ok',Waitlisted:'warn',Declined:'bad'}[a.decision]),
+ b('editAud',a.id,a.decision==='Pending'?'Score':'Edit')+(a.decision==='Accepted'&&!a.added?b('toRoster',a.id,'Add to roster'):a.added?pill('On roster','ok'):'')+b('delAud',a.id,'Delete')]))}</div>`;
+V.attendance=()=>{const evs=[...S.events].sort(byDate).reverse();if(!S.events.find(e=>e.id===AE))AE=(evs.find(e=>e.date<=today())||evs[0]||{}).id;
+ if(!evs.length)return '<h2>Attendance</h2><div class="card"><p class="mute">Add a rehearsal on the Schedule tab first, then mark who came.</p></div>';
+ const rec=S.att[AE]||{},c=k=>act().filter(m=>rec[m.id]===k).length,rows=act().map(m=>({m,r:rate(m)})).sort((x,y)=>(x.r??101)-(y.r??101));
+ return `<div class="bar"><h2>Attendance</h2><select data-sel="ev" aria-label="Choose session">${evs.map(e=>`<option value="${e.id}"${e.id===AE?' selected':''}>${fmt(e.date)} · ${esc(e.title)}</option>`).join('')}</select></div>
+ <div class="card"><p class="mute">P present · L late (counts as present) · E excused (not counted) · A absent. Present ${c('P')}, late ${c('L')}, excused ${c('E')}, absent ${c('A')}, not marked ${act().filter(m=>!rec[m.id]).length}.</p>
+ <div class="bar"><label>Check in by member ID <input id="cid" placeholder="CH-2026-001" autocomplete="off" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"></label>${add('checkin','Mark present')}</div>
+ ${T(['Singer','Voice','Mark'],act().map(m=>[esc(m.name)+' <small class="mute">'+m.mid+'</small>',esc(m.voice),`<span class="seg">${['P','L','E','A'].map(k=>`<button class="btn sm${rec[m.id]===k?' on':''}" data-a="mark" data-id="${m.id}" data-v="${k}" aria-pressed="${rec[m.id]===k}">${k}</button>`).join('')}</span>`]))}</div>
+ <div class="card"><h2>Attendance rate by singer</h2>${T(['Singer','Rate'],rows.map(x=>[esc(x.m.name),x.r==null?'No data':pill(x.r+'%',x.r<75?'warn':'ok')]))}</div>`};
+V.costumes=()=>`<div class="bar"><h2>Costumes</h2>${add('addCos','Issue item')}</div><div class="card">${T(['Singer','Item','Size','Deposit','Issued','Status',''],
+ [...S.costumes].reverse().map(c=>[nm(c.memberId),esc(c.item),esc(c.size),peso(c.deposit),fmt(c.date),pill(c.status,{Issued:'warn',Returned:'ok',Lost:'bad'}[c.status]),(c.status==='Issued'?b('setCos',c.id,'Returned','Returned')+b('setCos',c.id,'Lost','Lost'):'')+b('delCos',c.id,'Delete')]))}</div>`;
+V.finance=()=>{const col=sum(S.payments,'amount')+sum(S.donations,'amount'),sp=sum(S.expenses,'amount');
+ return `<div class="bar"><h2>Finance</h2><span>${add('pay','Record payment')} <button class="btn" data-a="exp">Add expense</button> <button class="btn" data-a="setDues">Dues: ${peso(S.dues)}</button></span></div>
+ <div class="grid"><div class="stat"><b>${peso(col)}</b><span>Collected (dues and donations)</span></div><div class="stat"><b>${peso(sp)}</b><span>Spent</span></div><div class="stat"><b>${peso(col-sp)}</b><span>Cash on hand</span></div></div>
+ <div class="card"><h2>Dues by singer</h2>${T(['Singer','Paid','Still owes','Status'],act().map(m=>[esc(m.name),peso(paid(m)),peso(owed(m)),owed(m)?pill('Owes','warn'):pill('Paid up','ok')]))}</div>
+ <div class="two"><div class="card"><h2>Payments</h2>${T(['Date','Singer','Amount',''],[...S.payments].sort(byDate).reverse().map(p=>[fmt(p.date),nm(p.memberId)+'<br><small class="mute">'+esc(p.note)+'</small>',peso(p.amount),b('delPay',p.id,'Delete')]))}</div>
+ <div class="card"><h2>Expenses</h2>${T(['Date','What','Amount',''],[...S.expenses].sort(byDate).reverse().map(x=>[fmt(x.date),esc(x.desc)+'<br><small class="mute">'+esc(x.category)+'</small>',peso(x.amount),b('delExp',x.id,'Delete')]))}</div></div>`};
+V.schedule=()=>{const cf=conflicts(),t=today(),row=e=>[fmt(e.date)+'<br><small class="mute">'+esc(e.time)+'</small>',esc(e.title)+(cf.has(e.id)?' '+pill('Conflict','bad'):''),pill(e.type),esc(e.venue),b('editEv',e.id,'Edit')+b('delEv',e.id,'Delete')],H=['Date','Event','Type','Venue',''];
+ return `<div class="bar"><h2>Schedule</h2>${add('addEv','Add event')}</div><div class="card"><h2>Upcoming</h2>${T(H,S.events.filter(e=>e.date>=t).sort(byDate).map(row))}</div>
+ <div class="card"><h2>Past</h2>${T(H,S.events.filter(e=>e.date<t).sort(byDate).reverse().map(row))}</div>`};
+V.donations=()=>{const d=S.donate,rows=[['Bank',d.bank],['Account name',d.acctName],['Account number',d.acctNo],['GCash or Maya',d.gcash]].filter(r=>r[1]);
+ return `<div class="bar"><h2>Income and donations</h2><span>${add('addDon','Record income')} <button class="btn" data-a="payInfo">Edit payment details</button></span></div>
+ <div class="two"><div class="card"><h2>Support ${esc(S.name)}</h2>${d.note?`<p>${esc(d.note)}</p>`:''}
+ ${d.qr?`<img src="${d.qr}" alt="Donation QR code" style="max-width:240px;width:100%;display:block;margin:8px 0;background:#fff;padding:8px;border-radius:8px">`:'<p class="mute">No QR code yet. Upload a screenshot of your GCash, Maya or bank QR.</p>'}
+ <p><label class="btn" style="display:inline-block">${d.qr?'Replace QR':'Upload QR'}<input type="file" accept="image/*" data-qr hidden></label> ${d.qr?b('rmQr','','Remove QR'):''}</p>
+ ${rows.length?`<table><tbody>${rows.map(r=>`<tr><td class="mute">${r[0]}</td><td>${esc(r[1])}</td><td><button class="btn sm" data-a="copy" data-v="${esc(r[1])}">Copy</button></td></tr>`).join('')}</tbody></table>`:'<p class="mute">No bank details yet. Use Edit payment details.</p>'}</div>
+ <div class="card"><h2>Income received: ${peso(sum(S.donations,'amount'))}</h2><p class="mute">${['Donation','Competition prize','Talent fee','Merch sales','Sponsorship','Other'].map(k=>{const t=sum(S.donations.filter(x=>(x.source||'Donation')===k),'amount');return t?k+' '+peso(t):''}).filter(Boolean).join(' · ')}</p>${T(['Date','From','Type','Amount',''],[...S.donations].sort(byDate).reverse().map(x=>[fmt(x.date),esc(x.donor)+'<br><small class="mute">'+esc(x.method)+' '+esc(x.note)+'</small>',esc(x.source||'Donation'),peso(x.amount),b('delDon',x.id,'Delete')]))}</div></div>`};
+V.data=()=>`<h2>Data</h2><div class="card"><p>Your records are saved in this browser. Export a backup before clearing browser data or switching devices.</p>
+ <p><button class="btn" data-a="rename">Rename choir</button> <label class="btn" style="display:inline-block">Upload logo<input type="file" accept="image/*" data-logo hidden></label> <button class="btn" data-a="out">Sign out</button> <button class="btn" data-a="export">Export backup</button> <label class="btn" style="display:inline-block">Import backup<input type="file" accept="application/json" data-imp hidden></label></p>
+ <p class="mute">Shortcuts: Alt+1 to Alt+9 switch tabs. If you delete something by mistake, press Undo in the message that appears.</p>
+ <p><button class="btn" data-a="seed">Load sample data</button> <button class="btn" data-a="clear">Start fresh</button></p></div>`;
+/* ---------- forms and actions ---------- */
+const opts=a=>a.map(m=>[m.id,m.mid+' · '+m.name]);
+const memberForm=m=>ask(m?'Edit member':'Add member',[{k:'name',label:'Full name',req:1,v:m?.name},{k:'voice',label:'Voice part',type:'select',opts:VOICES,v:m?.voice},{k:'contact',label:'Contact number',v:m?.contact},{k:'status',label:'Status',type:'select',opts:['Active','Inactive','Alumni'],v:m?.status}],o=>{m?Object.assign(m,o):S.members.push({id:uid(),joined:today(),...o});render()});
+const audForm=a=>ask(a?'Audition':'Add audition',[{k:'name',label:'Applicant',req:1,v:a?.name},{k:'voice',label:'Voice part',type:'select',opts:VOICES,v:a?.voice},{k:'contact',label:'Contact number',v:a?.contact},{k:'date',label:'Audition date',type:'date',req:1,v:a?.date||today()},
+ ...['pitch','tone','sight','range'].map(k=>({k,label:{pitch:'Pitch accuracy (0-5)',tone:'Tone quality (0-5)',sight:'Sight-reading (0-5)',range:'Vocal range (0-5)'}[k],type:'number',min:0,max:5,v:a?.[k]??0})),
+ {k:'decision',label:'Decision',type:'select',opts:['Pending','Accepted','Waitlisted','Declined'],v:a?.decision},{k:'notes',label:'Notes',type:'area',v:a?.notes}],o=>{const t=tot(o);if(t>0&&o.decision==='Pending')o.decision=t>=16?'Accepted':t>=12?'Waitlisted':'Declined';a?Object.assign(a,o):S.auditions.push({id:uid(),added:false,...o});render()});
+const evForm=e=>ask(e?'Edit event':'Add event',[{k:'title',label:'Title',req:1,v:e?.title},{k:'type',label:'Type',type:'select',opts:['Rehearsal','Concert','Workshop','Meeting','Outreach'],v:e?.type},{k:'date',label:'Date',type:'date',req:1,v:e?.date||today()},{k:'time',label:'Time',type:'time',req:1,v:e?.time||'18:00'},{k:'venue',label:'Venue',v:e?.venue},{k:'notes',label:'Notes',type:'area',v:e?.notes}],o=>{e?Object.assign(e,o):S.events.push({id:uid(),...o});render()});
+const needMembers=()=>act().length?true:(toast('Add an active member first.'),false);
+const ACT={addMember:()=>memberForm(),editMember:id=>memberForm(mem(id)),
+ delMember:id=>sure('Remove '+mem(id).name+' and their payments, costume records and attendance?',()=>{S.members=S.members.filter(m=>m.id!==id);S.payments=S.payments.filter(p=>p.memberId!==id);S.costumes=S.costumes.filter(c=>c.memberId!==id);Object.values(S.att).forEach(r=>delete r[id]);render()}),
+ addAud:()=>audForm(),editAud:id=>audForm(S.auditions.find(a=>a.id===id)),delAud:id=>sure('Delete this audition record?',()=>{S.auditions=S.auditions.filter(a=>a.id!==id);render()}),
+ toRoster:id=>{const a=S.auditions.find(x=>x.id===id);S.members.push({id:uid(),name:a.name,voice:a.voice,contact:a.contact,status:'Active',joined:today()});a.added=true;toast(a.name+' added to the roster');render()},
+ mark:(id,v)=>{const r=S.att[AE]=S.att[AE]||{};r[id]===v?delete r[id]:r[id]=v;render()},
+ addCos:()=>needMembers()&&ask('Issue costume item',[{k:'memberId',label:'Singer',type:'select',opts:opts(act())},{k:'item',label:'Item',type:'select',opts:ITEMS},{k:'size',label:'Size',v:'M'},{k:'deposit',label:'Deposit (₱)',type:'number',v:0},{k:'date',label:'Date issued',type:'date',v:today()}],o=>{S.costumes.push({id:uid(),status:'Issued',...o});render()}),
+ setCos:(id,v)=>{S.costumes.find(c=>c.id===id).status=v;render()},delCos:id=>sure('Delete this costume record?',()=>{S.costumes=S.costumes.filter(c=>c.id!==id);render()}),
+ pay:()=>needMembers()&&ask('Record payment',[{k:'memberId',label:'Singer',type:'select',opts:opts(act())},{k:'amount',label:'Amount (₱)',type:'number',v:S.dues},{k:'date',label:'Date',type:'date',v:today()},{k:'note',label:'Note',v:'Semester dues'}],o=>{if(o.amount>0){S.payments.push({id:uid(),...o});render()}else toast('Enter an amount above zero.')}),
+ delPay:id=>sure('Delete this payment?',()=>{S.payments=S.payments.filter(p=>p.id!==id);render()}),
+ exp:()=>ask('Add expense',[{k:'desc',label:'What was it for?',req:1},{k:'amount',label:'Amount (₱)',type:'number',v:0},{k:'date',label:'Date',type:'date',v:today()},{k:'category',label:'Category',type:'select',opts:['Costumes','Venue','Music scores','Transport','Food','Other']}],o=>{S.expenses.push({id:uid(),...o});render()}),
+ delExp:id=>sure('Delete this expense?',()=>{S.expenses=S.expenses.filter(x=>x.id!==id);render()}),
+ setDues:()=>ask('Dues per member',[{k:'dues',label:'Amount (₱)',type:'number',v:S.dues}],o=>{S.dues=o.dues;render()}),
+ addEv:()=>evForm(),editEv:id=>evForm(S.events.find(e=>e.id===id)),delEv:id=>sure('Delete this event and its attendance marks?',()=>{S.events=S.events.filter(e=>e.id!==id);delete S.att[id];render()}),
+ payInfo:()=>ask('Payment details',[{k:'bank',label:'Bank name',v:S.donate.bank},{k:'acctName',label:'Account name',v:S.donate.acctName},{k:'acctNo',label:'Account number',v:S.donate.acctNo},{k:'gcash',label:'GCash or Maya number',v:S.donate.gcash},{k:'note',label:'Message to donors',type:'area',v:S.donate.note}],o=>{Object.assign(S.donate,o);render()}),
+ addDon:()=>ask('Record donation',[{k:'source',label:'Type of income',type:'select',opts:['Donation','Competition prize','Talent fee','Merch sales','Sponsorship','Other']},{k:'donor',label:'Received from',v:'Anonymous'},{k:'amount',label:'Amount (₱)',type:'number',v:0},{k:'date',label:'Date received',type:'date',v:today()},{k:'method',label:'Received through',type:'select',opts:['GCash','Maya','Bank transfer','Cash','Other']},{k:'note',label:'Note',v:''}],o=>{if(o.amount>0){S.donations.push({id:uid(),...o});render()}else toast('Enter an amount above zero.')}),
+ delDon:id=>sure('Delete this donation record?',()=>{S.donations=S.donations.filter(x=>x.id!==id);render()}),
+ rmQr:()=>{S.donate.qr='';render()},
+ copy:(id,v)=>(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('Copied'),()=>toast('Could not copy. Select the text instead.')),
+ checkin:()=>{const el=$('#cid'),v=el.value.trim().toUpperCase(),m=act().find(x=>x.mid.toUpperCase()===v);
+  if(!m)return toast(v?'No active member has ID '+v+'. Check the number and try again.':'Type or scan a member ID first.');
+  const r=S.att[AE]=S.att[AE]||{},was=r[m.id]==='P';r[m.id]='P';render();$('#cid').focus();toast(m.name+(was?' was already marked present':' marked present'))},
+ out:async()=>{clearTimeout(pushT);await push();try{localStorage.removeItem(K+':'+UID)}catch(e){}S=blank();AUTH.signOut()},
+ rename:()=>ask('Rename choir',[{k:'name',label:'Choir name',req:1,v:S.name}],o=>{S.name=o.name;render()}),
+ export:()=>{const u=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download='chorale-backup-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(u)},1500)},
+ seed:()=>sure('Replace everything with sample data?',()=>{S=keep(seed());render()}),clear:()=>sure('Erase all records and start fresh? Export a backup first if unsure.',()=>{S=keep(blank());render()})};
+/* ---------- shell ---------- */
+const TABS=[['dashboard','Dashboard'],['members','Members'],['auditions','Auditions'],['attendance','Attendance'],['costumes','Costumes'],['finance','Finance'],['schedule','Schedule'],['donations','Income'],['data','Data']];
+function render(){const t=TABS.some(x=>x[0]===location.hash.slice(1))?location.hash.slice(1):'dashboard';
+ S.members.forEach(m=>{if(!m.mid)m.mid=nextId()});$('#ttl').textContent=S.name;$('#logo').src=S.logo||'';$('#logo').style.display=S.logo?'':'none';document.title=S.name+' · Chorale Manager';
+ $('#nav').innerHTML=TABS.map(x=>`<a href="#${x[0]}" class="${x[0]===t?'on':''}">${x[1]}</a>`).join('');
+ $('#main').innerHTML=V[t]();save()}
+$('#main').addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a)ACT[a.dataset.a](a.dataset.id,a.dataset.v)});
+$('#main').addEventListener('change',e=>{if(e.target.dataset.sel){AE=e.target.value;render()}
+ if(e.target.matches('[data-logo]')){const f=e.target.files[0];if(f)shrink(f,256,u=>{S.logo=u;render();toast('Logo saved')})}
+ if(e.target.matches('[data-qr]')){const f=e.target.files[0];if(!f)return;const im=new Image,u=URL.createObjectURL(f);im.onload=()=>{const s=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);S.donate.qr=c.toDataURL('image/png');URL.revokeObjectURL(u);render();toast('QR saved')};im.onerror=()=>toast('Could not read that image.');im.src=u}
+ if(e.target.matches('[data-imp]')){const f=e.target.files[0];if(!f)return;const r=new FileReader;r.onload=()=>{try{const o=JSON.parse(r.result);if(!Array.isArray(o.members))throw 0;S=Object.assign(blank(),o,{sample:false});render();toast('Backup restored')}catch(x){toast('That file is not a Chorale backup.')}};r.readAsText(f)}});
+addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='cid'){e.preventDefault();ACT.checkin()}
+ if(e.altKey&&/^[1-9]$/.test(e.key)&&TABS[e.key-1])location.hash=TABS[e.key-1][0]});
+const keep=n=>{n.name=S.name;n.logo=S.logo;return n};
+const shrink=(f,max,cb)=>{const im=new Image,u=URL.createObjectURL(f);im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);cb(c.toDataURL('image/png'))};im.onerror=()=>toast('Could not read that image. Try a PNG or JPG.');im.src=u};
+const why=c=>({'auth/email-already-in-use':'That email already has an account. Sign in instead.','auth/invalid-credential':'Email or password is incorrect.','auth/wrong-password':'Email or password is incorrect.','auth/user-not-found':'Email or password is incorrect.','auth/weak-password':'Use a password with at least 6 characters.','auth/invalid-email':'Enter a valid email address.','auth/network-request-failed':'No connection. Check your internet and try again.','auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.'}[c]||'Something went wrong. Please try again.');
+function authView(mode,msg){document.body.classList.add('out');const up=mode==='up';
+ $('#gate').innerHTML=`<div class="card"><h1>Chorale Manager</h1><p class="mute">${up?'Create an account to register your choir':'Sign in to manage your choir'}</p>${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}<form id="af"><label>Email<input name="e" type="email" required autocomplete="email"></label><label>Password<input name="p" type="password" required minlength="6" autocomplete="${up?'new-password':'current-password'}"></label><div class="row"><button class="btn pri">${up?'Create account':'Sign in'}</button></div></form><p><a href="#" id="sw">${up?'I already have an account':'Register a new choir'}</a> · <a href="#" id="fp">Forgot password</a></p></div>`;
+ if(!READY)return;
+ $('#sw').onclick=e=>{e.preventDefault();authView(up?'in':'up')};
+ $('#fp').onclick=async e=>{e.preventDefault();const v=document.querySelector('#af [name=e]').value.trim();if(!v)return toast('Type your email above first, then tap Forgot password.');try{await AUTH.sendPasswordResetEmail(v)}catch(x){}toast('If that email has an account, a reset link is on its way.')};
+ $('#af').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);e.submitter.disabled=true;try{await (up?AUTH.createUserWithEmailAndPassword:AUTH.signInWithEmailAndPassword).call(AUTH,f.get('e').trim(),f.get('p'))}catch(x){authView(mode,why(x.code))}}}
+function registerView(){document.body.classList.add('out');pend='';
+ $('#gate').innerHTML=`<div class="card"><h1>Register your choir</h1><p class="mute">Your name and logo appear across the app. You can change them later.</p><form id="rf"><label>Choir name<input name="n" required maxlength="80" placeholder="e.g. St. Cecilia Chorale"></label><label>Logo (optional)<input type="file" accept="image/*" id="lg"></label><img id="lp" alt="Logo preview" style="display:none;width:96px;height:96px;object-fit:contain"><div class="row"><button type="button" class="btn" id="so">Sign out</button><button class="btn pri">Create choir</button></div></form></div>`;
+ $('#lg').onchange=e=>{const f=e.target.files[0];if(f)shrink(f,256,u=>{pend=u;$('#lp').src=u;$('#lp').style.display='block'})};
+ $('#so').onclick=()=>AUTH.signOut();
+ $('#rf').onsubmit=async e=>{e.preventDefault();const n=new FormData(e.target).get('n').trim();if(!n)return;e.submitter.disabled=true;S=blank();S.name=n;S.logo=pend;try{await push(true);start()}catch(x){e.submitter.disabled=false;toast('Could not create your choir. Check your connection and try again.')}}}
+const start=()=>{document.body.classList.remove('out');render()};
+async function loadChoir(){document.body.classList.add('out');$('#gate').innerHTML='<div class="card"><p>Loading your choir…</p></div>';
+ try{const d=await FS.collection('choirs').doc(UID).get();if(!d.exists)return registerView();S=Object.assign(blank(),JSON.parse(d.data().state));start()}
+ catch(e){const l=lload();if(l){S=l;start();toast('Working offline. Changes will sync when you reconnect.')}
+  else{$('#gate').innerHTML='<div class="card"><p role="alert" class="bad">We could not reach the server.</p><div class="row"><button class="btn" id="so">Sign out</button><button class="btn pri" id="rt">Try again</button></div></div>';$('#so').onclick=()=>AUTH.signOut();$('#rt').onclick=loadChoir}}}
+const CFG=window.FIREBASE_CONFIG,READY=!!(CFG&&CFG.apiKey&&!/YOUR_/.test(CFG.apiKey));
+function boot(){if(!READY)return authView('in','This copy is not connected to Firebase yet. Open firebase-config.js, paste your project settings, and reload (see README).');
+ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+ firebase.initializeApp(CFG);AUTH=firebase.auth();FS=firebase.firestore();FS.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+ AUTH.onAuthStateChanged(u=>{if(!u){UID=null;S=blank();return authView('in')}UID=u.uid;loadChoir()})}
+addEventListener('visibilitychange',()=>{if(document.hidden&&UID){clearTimeout(pushT);push()}});
+addEventListener('hashchange',()=>UID&&render());boot();
+</script></body></html>
